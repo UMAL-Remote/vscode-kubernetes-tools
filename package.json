@@ -1344,7 +1344,7 @@
         "node-yaml-parser": "^0.0.9",
         "opn": "^5.2.0",
         "pluralize": "^4.0.0",
-        "portfinder": "^1.0.13",
+        "portfinder": "^1.0.32",
         "rxjs": "^6.5.4",
         "semver": "^5.5.1",
         "shelljs": "^0.7.7",
