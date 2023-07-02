@@ -1334,7 +1334,7 @@
         "download": "^7.1.0",
         "fuzzysearch": "^1.0.3",
         "got": "^11.8.2",
-        "graceful-fs": "^4.1.11",
+        "graceful-fs": "^4.2.11",
         "js-yaml": "^3.13.1",
         "lodash": "^4.17.21",
         "mixin-deep": "^1.3.2",
