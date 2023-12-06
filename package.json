@@ -1328,7 +1328,7 @@
         "await-notify": "^1.0.1",
         "clipboardy": "^1.2.3",
         "compare-versions": "^3.1.0",
-        "debug": "^3.1.0",
+        "debug": "^3.2.7",
         "docker-file-parser": "^1.0.3",
         "dockerfile-parse": "^0.2.0",
         "download": "^7.1.0",
