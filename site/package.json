@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/azure/vscode-kubernetes-tools#readme",
   "dependencies": {
-    "del": "^4.1.1",
+    "del": "^8.0.0",
     "font-awesome": "^4.7.0",
     "foundation-sites": "~5.5.3",
     "gulp": "^4.0.2",
