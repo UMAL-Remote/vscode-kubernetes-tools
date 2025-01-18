@@ -461,7 +461,7 @@ function provideHoverJson(document: vscode.TextDocument, position: vscode.Positi
 
 function provideHoverYaml(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Hover | null> {
     const syntax: Syntax = {
-        parse: (text) => yaml.safeLoad(text),
+        parse: (text) => yaml.load(text),
         findParent: (document, parentLine) => findParentYaml(document, parentLine)
     };
     return provideHover(document, position, token, syntax);
@@ -1047,7 +1047,7 @@ function findKindNameForText(text: string): Errorable<ResourceKindName> {
 
 function findKindNamesForText(text: string): Errorable<ResourceKindName[]> {
     try {
-        const objs: {}[] = yaml.safeLoadAll(text);
+        const objs: unknown[] = yaml.loadAll(text);
         if (objs.some((o) => !isKubernetesResource(o))) {
             if (objs.length === 1) {
                 return { succeeded: false, error: ['the open document is not a Kubernetes resource'] };
@@ -1394,7 +1394,7 @@ async function getContainerQuery(resource: ContainerContainer, containerType: st
         const bits = s.split('\t');
         return { name: bits[0] ? bits[0].trim() : '', image: bits[1] ? bits[1].trim() : '', initContainer: containerType === 'initContainers'};
     });
-    
+
     return containersEx.filter(c => c.name !== '');
 }
 
@@ -1668,7 +1668,7 @@ const applyKubernetes = () => {
     });
 };
 
-const handleError = (err: NodeJS.ErrnoException) => {
+const handleError = (err: NodeJS.ErrnoException | null) => {
     if (err) {
         vscode.window.showErrorMessage(err.message);
     }
@@ -2097,7 +2097,7 @@ async function deleteContextKubernetes(explorerNode: ClusterExplorerNode) {
 async function copyKubernetes(explorerNode: ClusterExplorerNode) {
     const name = copiableName(explorerNode);
     if (name) {
-        clipboard.write(name);
+        clipboard.copyTextToClipboard(name);
     }
 }
 

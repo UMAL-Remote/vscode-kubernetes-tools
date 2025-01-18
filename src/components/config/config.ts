@@ -110,7 +110,7 @@ export function getToolPath(_host: Host, shell: Shell, tool: string): string | u
     const config = vscode.workspace.getConfiguration();
 
     const baseBackCompatKey = toolPathBackCompatBaseKey(tool);
-    const osBackCompatKey = osOverrideKey(os, baseBackCompatKey);
+    const osBackCompatKey = osBackCompatOverrideKey(os, baseBackCompatKey);
     const backCompatSettings = config.inspect<Dictionary<any>>(EXTENSION_CONFIG_KEY) || Dictionary.of<any>();
     const wsFolderValues = backCompatSettings.workspaceFolderValue || {};
     const wsValues = backCompatSettings.workspaceValue || {};
@@ -140,7 +140,7 @@ export function getToolPath(_host: Host, shell: Shell, tool: string): string | u
         defaultValues[osKey] ||
         config.get(osKey) ||
         userValues[baseKey] ||
-        defaultValues[baseKey];
+        defaultValues[baseKey] ||
         config.get(baseKey);
 
     return interpolateVariables(topLevelToolPath || globalBackCompatSetting);
@@ -160,9 +160,14 @@ function toolPathNewBaseKey(tool: string): string {
     return `vscode-kubernetes.${tool}-path`;
 }
 
+function osBackCompatOverrideKey(os: Platform, baseKey: string): string {
+    const osKey = osKeyString(os);
+    return osKey ? `${baseKey}.${osKey}` : baseKey;
+}
+
 function osOverrideKey(os: Platform, baseKey: string): string {
     const osKey = osKeyString(os);
-    return osKey ? `${baseKey}.${osKey}` : baseKey;  // The 'else' clause should never happen so don't worry that this would result in double-checking a missing base key
+    return osKey ? `${baseKey}-${osKey}` : baseKey;  // The 'else' clause should never happen so don't worry that this would result in double-checking a missing base key
 }
 
 function osKeyString(os: Platform): string | null {
@@ -203,7 +208,7 @@ export function getUseWsl(): boolean {
 }
 
 // minikube check upgrade
-const  MK_CHECK_UPGRADE_KEY = 'checkForMinikubeUpgrade';
+const MK_CHECK_UPGRADE_KEY = 'checkForMinikubeUpgrade';
 
 export function getCheckForMinikubeUpgrade(): boolean {
     return vscode.workspace.getConfiguration(EXTENSION_CONFIG_KEY)[MK_CHECK_UPGRADE_KEY];
@@ -338,6 +343,10 @@ export function getCRDCodeCompletionState(): string | undefined {
 export function setCRDCodeCompletion(enable: boolean): void {
     const value = (enable) ? 'enabled' : 'disabled';
     setConfigValue('vs-kubernetes.crd-code-completion', value);
+}
+
+export function supressOutput(): boolean {
+    return vscode.workspace.getConfiguration(EXTENSION_CONFIG_KEY)['vs-kubernetes.supress-output'];
 }
 
 export function getMinikubeShowInfoState(): string | undefined {

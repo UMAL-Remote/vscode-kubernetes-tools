@@ -34,21 +34,18 @@ window.addEventListener('message', (event) => {
             containersPanel.classList.remove('display-none');
             containersPanel.classList.add('display-inline-block');
 
-            const select = createElement('vscode-select');
+            const select = createElement('vscode-single-select');
             select.setAttribute('id', 'containers-select');
             // eslint-disable-next-line @typescript-eslint/prefer-for-of
             for (let i = 0; i < containers.length; i += 1) {
                 const option = createElement('vscode-option', containers[i].name,
                     (containers[i].initContainer ? containers[i].name + ' (init)' : containers[i].name));
-                if (i === 0) {
-                    option.setAttribute('selected', '');
-                }
                 select.appendChild(option);
             }
             containersPanel.appendChild(select);
         }
         case 'content': {
-            const text = message.text.replace(/\n$/, '');
+            const text = message.text?.replace(/\n$/, '');
             if (!text) {
                 return;
             }
@@ -126,8 +123,9 @@ function debounce(func, wait, immediate) {
 
 function createElement(type, value, content) {
     const element = document.createElement(type);
-    if (value) { element.value = value; }
+    if (value) { element.setAttribute('value', value); }
     if (content) { element.textContent = content; }
+
     return element;
 }
 
@@ -238,7 +236,6 @@ function resetFilter() {
 function runFilter() {
     emptyContent();
     saveFilteredContent();
-    setHeightContentPanel();
     renderByPagination();
 }
 
@@ -313,7 +310,6 @@ function clear() {
         resetContent();
         resetFilter();
     }
-    setHeightContentPanel(true);
     emptyContent();
 }
 
@@ -342,20 +338,8 @@ function updateContent(newContent) {
     }
 
     content = saveFilteredContent(content);
-    setHeightContentPanel();
     renderByPagination(content);
     switchClass('clearBtn', 'display-none', 'display-inline-block');
-}
-
-function setHeightContentPanel(removeStyle) {
-    if (removeStyle) {
-        document.getElementById('innerLogPanel').style.removeProperty('height');
-    } else {
-        const content = isFiltering() ? filteredContent : fullPageContent;
-        const rows = Object.keys(content).length;
-        const heightDiv = getDefaultDivHeightValue();
-        document.getElementById('innerLogPanel').style.height = `${heightDiv * rows}px`;
-    }
 }
 
 function saveFilteredContent(content) {
