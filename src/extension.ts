@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import * as os from 'os';
 import * as path from 'path';
 import { fs } from './fs';
+import { execFileSync } from 'child_process';
 
 // External dependencies
 import * as yaml from 'js-yaml';
@@ -68,7 +69,6 @@ import { setActiveKubeconfig, getKnownKubeconfigs, addKnownKubeconfig } from './
 import { HelmDocumentSymbolProvider } from './helm.symbolProvider';
 import { findParentYaml } from './yaml-support/yaml-navigation';
 import { linters } from './components/lint/linters';
-import { runClusterWizard } from './components/clusterprovider/clusterproviderserver';
 import { timestampText } from './utils/naming';
 import { ContainerContainer } from './utils/containercontainer';
 import { APIBroker } from './api/contract/api';
@@ -89,6 +89,7 @@ import { LocalTunnelDebugger } from './components/localtunneldebugger/localtunne
 import { setAssetContext } from './assets';
 import { fixOldInstalledBinaryPermissions } from './components/installer/fixwriteablebinaries';
 import { interpolateVariables } from './utils/interpolation';
+import { AKSProvider } from './components/cloudprovider/aksprovider';
 
 let explainActive = false;
 let swaggerSpecPromise: Promise<explainer.SwaggerModel | undefined> | null = null;
@@ -133,6 +134,7 @@ export const HELM_TPL_MODE: vscode.DocumentFilter = { language: "helm", scheme: 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext): Promise<APIBroker> {
+    await validateKubeconfigPath();
     setAssetContext(context);
 
     await fixOldInstalledBinaryPermissions(shell);
@@ -461,7 +463,7 @@ function provideHoverJson(document: vscode.TextDocument, position: vscode.Positi
 
 function provideHoverYaml(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Hover | null> {
     const syntax: Syntax = {
-        parse: (text) => yaml.safeLoad(text),
+        parse: (text) => yaml.load(text),
         findParent: (document, parentLine) => findParentYaml(document, parentLine)
     };
     return provideHover(document, position, token, syntax);
@@ -812,13 +814,31 @@ async function getKubernetes(explorerNode?: any) {
 function addWatch(tree: explorer.KubernetesExplorer, explorerNode?: ClusterExplorerNode) {
     if (explorerNode) {
         tree.watch(explorerNode);
+        const displayName = getWatchDisplayName(explorerNode);
+        if (displayName) {
+            vscode.window.showInformationMessage(`Watching ${displayName}`);
+        }
     }
 }
 
 function deleteWatch(tree: explorer.KubernetesExplorer, explorerNode?: ClusterExplorerNode) {
     if (explorerNode) {
         tree.stopWatching(explorerNode);
+        const displayName = getWatchDisplayName(explorerNode);
+        if (displayName) {
+            vscode.window.showInformationMessage(`Stopped watching ${displayName}`);
+        }
     }
+}
+
+// Get a properly pluralized name for the watched resource
+function getWatchDisplayName(node: ClusterExplorerNode): string | undefined {
+    if (node.nodeType === 'folder.resource') {
+        return node.kind.pluralDisplayName;
+    } else if (node.nodeType === 'resource') {
+        return node.kindName;
+    }
+    return undefined;
 }
 
 function findVersion() {
@@ -1047,7 +1067,7 @@ function findKindNameForText(text: string): Errorable<ResourceKindName> {
 
 function findKindNamesForText(text: string): Errorable<ResourceKindName[]> {
     try {
-        const objs: {}[] = yaml.safeLoadAll(text);
+        const objs: unknown[] = yaml.loadAll(text);
         if (objs.some((o) => !isKubernetesResource(o))) {
             if (objs.length === 1) {
                 return { succeeded: false, error: ['the open document is not a Kubernetes resource'] };
@@ -1394,7 +1414,7 @@ async function getContainerQuery(resource: ContainerContainer, containerType: st
         const bits = s.split('\t');
         return { name: bits[0] ? bits[0].trim() : '', image: bits[1] ? bits[1].trim() : '', initContainer: containerType === 'initContainers'};
     });
-    
+
     return containersEx.filter(c => c.name !== '');
 }
 
@@ -1668,7 +1688,7 @@ const applyKubernetes = () => {
     });
 };
 
-const handleError = (err: NodeJS.ErrnoException) => {
+const handleError = (err: NodeJS.ErrnoException | null) => {
     if (err) {
         vscode.window.showErrorMessage(err.message);
     }
@@ -1993,37 +2013,149 @@ async function debounceActivation(): Promise<void> {
     }
 }
 
-async function configureFromClusterKubernetes() {
+// helper function for selecting cloud provider
+async function selectProvider(): Promise<Errorable<CloudProvider>> {
     await debounceActivation();
-    runClusterWizard('Add Existing Cluster', 'configure');
+    // register the providers, for now only AKS
+    const providers: CloudProvider[] = [
+        new AKSProvider(),
+    ];
+
+    const providerNames = providers.map((provider) => provider.getName());
+    const clusterType = await vscode.window.showQuickPick(providerNames, { placeHolder: "Select the cluster type" });
+
+    if (!clusterType) {
+        return { succeeded: false, error: ['Failed to get cluster type']};
+    }
+    // get the provider
+    const selectedProvider = providers.find((p) => p.getName() === clusterType);
+    if (!selectedProvider) {
+        return { succeeded: false, error: ['Failed to get provider']};
+    }
+
+    // sign in check
+    const alreadySignedIn = await selectedProvider.isSignedIn();
+    if (!alreadySignedIn) {
+        const isSignedIn = await selectedProvider.signIn();
+        if (!isSignedIn) {
+            vscode.window.showErrorMessage(`Failed to sign in to ${selectedProvider.getName()}`);
+            return { succeeded: false, error: ['Failed to sign in to provider']};
+        }
+    }
+
+    return { succeeded: true, result: selectedProvider };
 }
 
-async function createClusterKubernetes() {
+// adds cluster to local kubeconfig
+async function configureFromClusterKubernetes() {
     await debounceActivation();
-    runClusterWizard('Create Kubernetes Cluster', 'create');
+    const provider = await selectProvider();
+    if (failed(provider)){
+        vscode.window.showErrorMessage(provider.error[0]);
+        return;
+    }
+
+    const subscriptionId = await provider.result.prerequisites();
+    if (!subscriptionId) return;
+
+    // currently AKS is our only provider
+    if (provider.result instanceof AKSProvider) {
+        let cluster = await provider.result.selectCluster(subscriptionId);
+        if (cluster){
+            let kconfig = await provider.result.getKubeconfigYaml(subscriptionId, cluster.resourceGroup, cluster.name);
+            if (kconfig) { 
+                mergeToKubeconfig(kconfig);
+            } else {
+                vscode.window.showErrorMessage("Failed to get kubeconfig");
+            }
+        } 
+    } 
+}
+
+// creates a new cluster using aks extension
+async function createClusterKubernetes() {
+    const selectedProvider = await selectProvider();
+    if (failed(selectedProvider)) {
+        vscode.window.showErrorMessage("Failed to get provider");
+        return;
+    }
+    const subscriptionId = await selectedProvider.result.prerequisites();
+    if (subscriptionId) {
+       await selectedProvider.result.createCluster(subscriptionId);
+    }
 }
 
 const ADD_NEW_KUBECONFIG_PICK = "+ Add new kubeconfig";
 
-async function useKubeconfigKubernetes(kubeconfig?: string | { isTrusted: boolean } /* TODO: remove when VS Code fixed */): Promise<void> {
-    // TODO: remove when VS Code fixed - workaround for https://github.com/microsoft/vscode/issues/94872
-    function fix94872(kubeconfig?: string | { isTrusted: boolean }): string | undefined {
-        function isBuggyThing(o: string | undefined | { isTrusted: boolean }): o is { isTrusted: boolean } {
-            return !!o && ((o as any).isTrusted !== undefined);
-        }
-        if (isBuggyThing(kubeconfig)) {
-            return undefined;
-        }
-        return kubeconfig;
+async function useKubeconfigKubernetes(kubeconfig?: string): Promise<void> {
+    // prevents miscelanneous context arguments from being processed
+    let kubeconfigPath: string | undefined;
+    if (typeof kubeconfig !== 'string') {
+        kubeconfigPath = undefined;
+    } else {
+        kubeconfigPath = kubeconfig;
     }
 
-    const kc = await getKubeconfigSelection(fix94872(kubeconfig));
+    const kc = await getKubeconfigSelection(kubeconfigPath);
+    // return if no selection was made
     if (!kc) {
+        return;
+    }
+    // check to see if kubeconfig file path exists
+    if (!fs.existsSync(kc)) {
+        // prompts user to remove the entry from known configs
+        const removePick = await vscode.window.showWarningMessage(
+            `Kubeconfig file not found at path: ${kc}. Do you want to remove this entry from your known configs?`,
+            'Yes', 'No'
+        );
+        
+        // if user chooses to remove the entry, remove it from known configs
+        if (removePick === 'Yes') {
+            const knownKubeconfigs = getKnownKubeconfigs();
+            const updatedKubeconfigs = knownKubeconfigs.filter(path => path !== kc);
+            config.setConfigValue('vs-kubernetes.knownKubeconfigs', updatedKubeconfigs);
+            vscode.window.showInformationMessage(`Removed invalid kubeconfig from settings.`);
+        }
         return;
     }
     await setActiveKubeconfig(kc);
     onDidChangeKubeconfigEmitter.fire(getKubeconfigPath());
     telemetry.invalidateClusterType(undefined, kubectl);
+}
+
+async function validateKubeconfigPath() {
+    // kubeconfig existence check
+    const kc = getKubeconfigPath();
+    const p = kc.pathType === 'host' ? kc.hostPath : kc.wslPath;
+    // add awareness of multiple kubeconfigs
+    const listSep = path.delimiter; // ';' on Windows, ':' on Linux
+    const paths = p.split(listSep);
+    for (const path of paths) {
+        let exists: boolean;
+        if (kc.pathType === 'host') {
+            exists = fs.existsSync(path);
+        } else {
+        // on WSL, shell out to test if the file exists
+            try {
+                execFileSync('wsl.exe', ['test', '-e', path], { stdio: 'ignore' });
+                exists = true;
+            } catch {
+                exists = false;
+            }
+        }
+
+        if (!exists) {
+        const choice = await vscode.window.showWarningMessage(
+            `Kubeconfig not found at: ${path}. Add a new one?`,
+            'Add',
+            'Cancel'
+        );
+        if (choice === 'Add') {
+            await useKubeconfigKubernetes();
+        }
+        break;
+        }
+    }
 }
 
 async function getKubeconfigSelection(kubeconfig?: string): Promise<string | undefined> {
@@ -2097,7 +2229,7 @@ async function deleteContextKubernetes(explorerNode: ClusterExplorerNode) {
 async function copyKubernetes(explorerNode: ClusterExplorerNode) {
     const name = copiableName(explorerNode);
     if (name) {
-        clipboard.write(name);
+        clipboard.copyTextToClipboard(name);
     }
 }
 

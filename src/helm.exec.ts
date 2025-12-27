@@ -8,7 +8,7 @@ import { NODE_TYPES } from './components/clusterexplorer/explorer';
 import { ClusterExplorerNode } from './components/clusterexplorer/node';
 import { HelmHistoryNode } from './components/clusterexplorer/node.helmrelease';
 import { refreshExplorer } from './components/clusterprovider/common/explorer';
-import { getToolPath, suppressHelmNotFound } from './components/config/config';
+import { getToolPath, suppressHelmNotFound, setSuppressHelmNotFound } from './components/config/config';
 import { installDependencies } from './components/installer/installdependencies';
 import { Errorable, failed } from './errorable';
 import { fs as shellfs } from './fs';
@@ -63,7 +63,7 @@ function helmReleaseFromJSON(json: any): HelmRelease {
 
 export async function helmVersion() {
     const syntaxVersion = await helmSyntaxVersion();
-    const versionArgs = (syntaxVersion === HelmSyntaxVersion.V3) ? '' : '-c';
+    const versionArgs = (syntaxVersion === HelmSyntaxVersion.V3 || syntaxVersion === HelmSyntaxVersion.V4) ? '' : '-c';
     const sr = await helmExecAsync(`version ${versionArgs}`);
     if (!sr) {
         vscode.window.showErrorMessage('Failed to run Helm');
@@ -80,6 +80,7 @@ export enum HelmSyntaxVersion {
     Unknown = 1,
     V2 = 2,
     V3 = 3,
+    V4 = 4,
 }
 
 let cachedVersion: HelmSyntaxVersion | undefined = undefined;
@@ -96,8 +97,14 @@ export async function helmSyntaxVersion(): Promise<HelmSyntaxVersion> {
             cachedVersion = HelmSyntaxVersion.V2;
         } else {
             const srHelm3 = await helmExecAsync(`version --short`);
-            if (srHelm3 && srHelm3.code === 0 && srHelm3.stdout.indexOf('v3') >= 0) {
-                cachedVersion = HelmSyntaxVersion.V3;
+            if (srHelm3 && srHelm3.code === 0) {
+                if (srHelm3.stdout.indexOf('v4') >= 0) {
+                    cachedVersion = HelmSyntaxVersion.V4;
+                } else if (srHelm3.stdout.indexOf('v3') >= 0) {
+                    cachedVersion = HelmSyntaxVersion.V3;
+                } else {
+                    return HelmSyntaxVersion.Unknown;
+                }
             } else {
                 return HelmSyntaxVersion.Unknown;
             }
@@ -116,8 +123,8 @@ export function helmTemplate() {
                 vscode.window.showErrorMessage(err);
                 return;
             }
-            vscode.window.showInformationMessage("chart rendered successfully");
-            logger.log(out);
+            vscode.window.showInformationMessage("Chart rendered successfully");
+            logger.logAndShow(out);
         });
     });
 }
@@ -175,8 +182,34 @@ function helmDepUpCore(path: string) {
 export async function helmCreate(): Promise<void> {
     const createResult = await helmCreateCore("Chart name", "mychart");
 
-    if (createResult && failed(createResult)) {
+    if (!createResult) {
+        return;
+    }
+
+    if (failed(createResult)) {
         vscode.window.showErrorMessage(createResult.error[0]);
+        return;
+    }
+
+    // Show success message and reveal the created chart
+    const chartPath = createResult.result.path;
+    const chartName = createResult.result.name;
+    
+    logger.log(`⎈⎈⎈ Created chart ${chartName} at ${chartPath}`);
+    
+    const action = await vscode.window.showInformationMessage(
+        `Created Helm chart '${chartName}'`,
+        'Open Chart.yaml',
+        'Open Folder'
+    );
+
+    if (action === 'Open Chart.yaml') {
+        const chartYamlPath = filepath.join(chartPath, 'Chart.yaml');
+        const doc = await vscode.workspace.openTextDocument(chartYamlPath);
+        await vscode.window.showTextDocument(doc);
+    } else if (action === 'Open Folder') {
+        const chartUri = vscode.Uri.file(chartPath);
+        await vscode.commands.executeCommand('revealInExplorer', chartUri);
     }
 }
 
@@ -209,12 +242,12 @@ export async function helmCreateCore(prompt: string, sampleName: string): Promis
 // helmLint runs the Helm linter on a chart within your project.
 export function helmLint() {
     pickChart((path) => {
-        logger.log("⎈⎈⎈ Linting " + path);
+        logger.logAndShow("⎈⎈⎈ Linting " + path);
         helmExec(`lint "${path}"`, (code, out, err) => {
-            logger.log(out);
-            logger.log(err);
+            logger.logAndShow(out);
+            logger.logAndShow(err);
             if (code !== 0) {
-                logger.log("⎈⎈⎈ LINTING FAILED");
+                logger.logAndShow("⎈⎈⎈ LINTING FAILED");
             }
         });
     });
@@ -280,13 +313,15 @@ function helmInspect(arg: any, s: InspectionStrategy) {
 export function helmDryRun() {
     pickChart(async (path) => {
         const syntaxVersion = await helmSyntaxVersion();
-        const generateNameArg = (syntaxVersion === HelmSyntaxVersion.V3) ? '--generate-name' : '';
+        const generateNameArg = (syntaxVersion === HelmSyntaxVersion.V3 || syntaxVersion === HelmSyntaxVersion.V4) ? '--generate-name' : '';
+        // --dry-run is deprecated in Helm v4, use --dry-run=client instead
+        const dryRunArg = (syntaxVersion === HelmSyntaxVersion.V4) ? '--dry-run=client' : '--dry-run';
         logger.log("⎈⎈⎈ Installing (dry-run) " + path);
-        helmExec(`install --dry-run ${generateNameArg} --debug "${path}"`, (code, out, err) => {
-            logger.log(out);
-            logger.log(err);
+        helmExec(`install ${dryRunArg} ${generateNameArg} --debug "${path}"`, (code, out, err) => {
+            logger.logAndShow(out);
+            logger.logAndShow(err);
             if (code !== 0) {
-                logger.log("⎈⎈⎈ INSTALL FAILED");
+                logger.logAndShow("⎈⎈⎈ INSTALL FAILED");
             }
         });
     });
@@ -323,17 +358,19 @@ export function helmUninstall(resourceNode?: ClusterExplorerNode) {
     logger.log("⎈⎈⎈ Uninstalling " + releaseName);
     vscode.window.showWarningMessage(`You are about to uninstall ${releaseName}. This action cannot be undone.`, 'Uninstall').then((opt) => {
         if (opt === "Uninstall") {
-            helmExec(`del ${releaseName}`, (code, out, err) => {
-                logger.log(out);
-                logger.log(err);
-                if (code !== 0) {
-                    logger.log("⎈⎈⎈ UNINSTALL FAILED");
-                    vscode.window.showErrorMessage(`Error uninstalling ${releaseName} ${err}`);
-                } else {
-                    vscode.window.showInformationMessage(`Release ${releaseName} successfully uninstalled.`);
-                    refreshExplorer();
-                }
-            });
+            host.longRunning(`Uninstalling ${releaseName}...`, () =>
+                helmExecAsync(`del ${releaseName}`).then((sr) => {
+                    logger.log(sr?.stdout || "");
+                    logger.log(sr?.stderr || "");
+                    if (!sr || sr.code !== 0) {
+                        logger.log("⎈⎈⎈ UNINSTALL FAILED");
+                        vscode.window.showErrorMessage(`Error uninstalling ${releaseName}: ${sr?.stderr || ""}`);
+                    } else {
+                        vscode.window.showInformationMessage(`Release ${releaseName} successfully uninstalled.`);
+                        refreshExplorer();
+                    }
+                })
+            );
         }
     });
 }
@@ -366,19 +403,20 @@ export async function helmRollback(resourceNode?: HelmHistoryNode) {
     const release = resourceNode.release;
     vscode.window.showWarningMessage(`You are about to rollback ${releaseName} to release version ${release.revision}. Continue?`, 'Rollback').then((opt) => {
         if (opt === "Rollback") {
-            helmExec(`rollback ${releaseName} ${release.revision} --cleanup-on-fail`, async (code, out, err) => {
-            logger.log(out);
-            logger.log(err);
-            if (out !== "") {
-                vscode.window.showInformationMessage(`Release ${releaseName} successfully rolled back to ${release.revision}.`);
-                refreshExplorer();
-            }
-            if (code !== 0) {
-                vscode.window.showErrorMessage(`Error rolling back to ${release.revision} for ${releaseName} ${err}`);
-            }
-        });
-    }
-});
+            host.longRunning(`Rolling back ${releaseName} to revision ${release.revision}...`, () =>
+                helmExecAsync(`rollback ${releaseName} ${release.revision} --cleanup-on-fail`).then((sr) => {
+                    logger.log(sr?.stdout || "");
+                    logger.log(sr?.stderr || "");
+                    if (!sr || sr.code !== 0) {
+                        vscode.window.showErrorMessage(`Error rolling back to ${release.revision} for ${releaseName}: ${sr?.stderr || ""}`);
+                    } else {
+                        vscode.window.showInformationMessage(`Release ${releaseName} successfully rolled back to ${release.revision}.`);
+                        refreshExplorer();
+                    }
+                })
+            );
+        }
+    });
 }
 
 export function helmfsUri(releaseName: string, revision: number | undefined): vscode.Uri {
@@ -444,13 +482,45 @@ async function helmFetchCore(chartId: string, version: string | undefined): Prom
         return;
     }
 
+    const destinationDir = projectFolder.uri.fsPath;
     const versionArg = version ? `--version ${version}` : '';
-    const sr = await helmExecAsync(`fetch ${chartId} --untar ${versionArg} -d "${projectFolder.uri.fsPath}"`);
+
+    const sr = await host.longRunning(`Fetching ${chartId}...`, () =>
+        helmExecAsync(`fetch ${chartId} --untar ${versionArg} -d "${destinationDir}"`)
+    );
     if (!sr || sr.code !== 0) {
         await vscode.window.showErrorMessage(`Helm fetch failed: ${sr ? sr.stderr : "Unable to run Helm"}`);
         return;
     }
-    await vscode.window.showInformationMessage(`Fetched ${chartId}`);
+
+    // Chart name is the last segment of chartId (e.g., "bitnami/nginx" -> "nginx")
+    const chartName = chartId.includes('/') ? chartId.split('/').pop()! : chartId;
+    const chartPath = filepath.join(destinationDir, chartName);
+
+    // Verify the expected path exists before offering quick-actions
+    if (!fs.existsSync(chartPath)) {
+        await vscode.window.showInformationMessage(`Fetched ${chartId}`);
+        return;
+    }
+
+    const action = await vscode.window.showInformationMessage(
+        `Fetched Helm chart '${chartId}'`,
+        'Open Chart.yaml',
+        'Open Folder'
+    );
+
+    if (action === 'Open Chart.yaml') {
+        const chartYamlPath = filepath.join(chartPath, 'Chart.yaml');
+        try {
+            const doc = await vscode.workspace.openTextDocument(chartYamlPath);
+            await vscode.window.showTextDocument(doc);
+        } catch (err) {
+            vscode.window.showErrorMessage(`Could not open Chart.yaml: ${err}`);
+        }
+    } else if (action === 'Open Folder') {
+        const chartUri = vscode.Uri.file(chartPath);
+        await vscode.commands.executeCommand('revealInExplorer', chartUri);
+    }
 }
 
 export async function helmInstall(kubectl: Kubectl, helmObject: helmrepoexplorer.HelmObject | undefined): Promise<void> {
@@ -481,16 +551,19 @@ async function helmInstallCore(kubectl: Kubectl, chartId: string, version: strin
     const ns = await currentNamespace(kubectl);
     const nsArg = ns ? `--namespace ${ns}` : '';
     const versionArg = version ? `--version ${version}` : '';
-    const generateNameArg = (syntaxVersion === HelmSyntaxVersion.V3) ? '--generate-name' : '';
-    const sr = await helmExecAsync(`install ${chartId} ${versionArg} ${nsArg} ${generateNameArg}`);
+    const generateNameArg = (syntaxVersion === HelmSyntaxVersion.V3 || syntaxVersion === HelmSyntaxVersion.V4) ? '--generate-name' : '';
+    logger.log(`⎈⎈⎈ Installing ${chartId}...`);
+    const sr = await host.longRunning(`Installing ${chartId}...`, () =>
+        helmExecAsync(`install ${chartId} ${versionArg} ${nsArg} ${generateNameArg}`)
+    );
     if (!sr || sr.code !== 0) {
         const message = sr ? sr.stderr : "Unable to run Helm";
-        logger.log(message);
+        logger.logAndShow(message);
         await vscode.window.showErrorMessage(`Helm install failed: ${message}`);
         return;
     }
     const releaseName = extractReleaseName(sr.stdout);
-    logger.log(sr.stdout);
+    logger.logAndShow(sr.stdout);
     await vscode.window.showInformationMessage(`Installed ${chartId} as release ${releaseName}`);
 }
 
@@ -576,7 +649,7 @@ export function pickChart(fn: (chartPath: string) => void) {
     findChartFiles().then((matches) => {
         switch (matches.length) {
             case 0:
-                vscode.window.showErrorMessage("No charts found");
+                vscode.window.showErrorMessage("No Helm charts found in workspace.");
                 return;
             case 1:
                 // Assume that if there is only one chart, that's the one to run.
@@ -786,24 +859,23 @@ export function ensureHelm(mode: EnsureMode) {
         if (fs.existsSync(configuredBin)) {
             return true;
         }
-        if (mode === EnsureMode.Alert && !suppressHelmNotFound()) {
-            vscode.window.showErrorMessage(`${configuredBin} does not exist!`, "Install dependencies").then((str) =>
-            {
-                if (str === "Install dependencies") {
-                    installDependencies();
-                }
-            });
-        }
-        return false;
+        return handleHelmNotFoundError(mode, `${configuredBin} does not exist!`);
     }
     if (sh.which("helm")) {
         return true;
-    }
-    if (mode === EnsureMode.Alert  && !suppressHelmNotFound()) {
-        vscode.window.showErrorMessage(`Could not find Helm binary.`, "Install dependencies").then((str) =>
+    } 
+    return handleHelmNotFoundError(mode, 'Could not find Helm binary.')
+}
+
+// Displays error message with option to install dependencies or disable Helm checks.
+function handleHelmNotFoundError(mode:EnsureMode, message:string): boolean{ 
+    if (mode === EnsureMode.Alert && !suppressHelmNotFound()) {
+        vscode.window.showErrorMessage(message, "Install dependencies", "Disable Helm checks").then((str) =>
         {
             if (str === "Install dependencies") {
                 installDependencies();
+            } else if (str === "Disable Helm checks") {
+                setSuppressHelmNotFound(true);
             }
         });
     }

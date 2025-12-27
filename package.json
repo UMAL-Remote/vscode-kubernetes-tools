@@ -2,10 +2,10 @@
     "name": "vscode-kubernetes-tools",
     "displayName": "Kubernetes",
     "description": "Develop, deploy and debug Kubernetes applications",
-    "version": "1.3.13",
+    "version": "1.3.28",
     "publisher": "ms-kubernetes-tools",
     "engines": {
-        "vscode": "^1.52.0"
+        "vscode": "^1.107.0"
     },
     "license": "Apache-2.0",
     "categories": [
@@ -22,76 +22,9 @@
         "gke",
         "aws"
     ],
-    "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
+    "aiKey": "0c6ae279ed8443289764825290e4f9e2-1a736e7c-1324-4338-be46-fc2a58ae4d14-7255",
     "icon": "images/k8s-logo.png",
     "activationEvents": [
-        "onCommand:extension.vsKubernetesCreate",
-        "onCommand:extension.vsKubernetesCreateFile",
-        "onCommand:extension.vsKubernetesAddWatch",
-        "onCommand:extension.vsKubernetesDelete",
-        "onCommand:extension.vsKubernetesDeleteNow",
-        "onCommand:extension.vsKubernetesDeleteUri",
-        "onCommand:extension.vsKubernetesDeleteWatch",
-        "onCommand:extension.vsKubernetesDescribe.Refresh",
-        "onCommand:extension.vsKubernetesApply",
-        "onCommand:extension.vsKubernetesApplyFile",
-        "onCommand:extension.vsKubernetesExplain",
-        "onCommand:extension.vsKubernetesLoad",
-        "onCommand:extension.vsKubernetesGet",
-        "onCommand:extension.vsKubernetesRun",
-        "onCommand:extension.vsKubernetesLogs",
-        "onCommand:extension.vsKubernetesExpose",
-        "onCommand:extension.vsKubernetesDescribe",
-        "onCommand:extension.vsKubernetesSync",
-        "onCommand:extension.vsKubernetesExec",
-        "onCommand:extension.vsKubernetesTerminal",
-        "onCommand:extension.vsKubernetesDiff",
-        "onCommand:extension.vsKubernetesScale",
-        "onCommand:extension.vsKubernetesDebug",
-        "onCommand:extension.vsKubernetesDebugLocalTunnel",
-        "onCommand:extension.vsKubernetesFindLocalTunnelDebugProviders",
-        "onCommand:extension.vsKubernetesSelectPod",
-        "onCommand:extension.vsKubernetesRemoveDebug",
-        "onCommand:extension.vsKubernetesConfigureFromCluster",
-        "onCommand:extension.vsKubernetesCreateCluster",
-        "onCommand:extension.vsKubernetesUseKubeconfig",
-        "onCommand:extension.vsKubernetesDashboard",
-        "onCommand:extension.vsMinikubeStop",
-        "onCommand:extension.vsMinikubeStart",
-        "onCommand:extension.vsMinikubeStatus",
-        "onCommand:extension.vsKubernetesPortForward",
-        "onCommand:extension.vsKubernetesDeleteFile",
-        "onCommand:extension.vsKubernetesAddFile",
-        "onCommand:extension.vsKubernetesUseNamespace",
-        "onCommand:extension.vsKubernetesShowEvents",
-        "onCommand:extension.vsKubernetesFollowEvents",
-        "onCommand:extension.vsKubernetesCronJobRunNow",
-        "onCommand:extension.helmTemplate",
-        "onCommand:extension.helmTemplatePreview",
-        "onCommand:extension.helmLint",
-        "onCommand:extension.helmDryRun",
-        "onCommand:extension.helmVersion",
-        "onCommand:extension.helmCreate",
-        "onCommand:extension.helmInsertReq",
-        "onCommand:extension.helmDepUp",
-        "onCommand:extension.helmInspectChart",
-        "onCommand:extension.helmFetchValues",
-        "onCommand:extension.helmGet",
-        "onCommand:extension.helmPackage",
-        "onCommand:extension.helmFetch",
-        "onCommand:extension.helmInstall",
-        "onCommand:extension.helmUninstall",
-        "onCommand:extension.helmRollback",
-        "onCommand:extension.helmDependencies",
-        "onCommand:extension.helmConvertToTemplate",
-        "onCommand:extension.helmParameterise",
-        "onView:extension.vsKubernetesExplorer",
-        "onView:extension.vsKubernetesHelmRepoExplorer",
-        "onView:kubernetes.cloudExplorer",
-        "onCommand:kubernetes.cloudExplorer.mergeIntoKubeconfig",
-        "onCommand:kubernetes.cloudExplorer.saveKubeconfig",
-        "onCommand:kubernetes.cloudExplorer.findProviders",
-        "onCommand:kubernetes.portForwarding.showSessions",
         "onLanguage:helm",
         "onLanguage:yaml",
         "onFileSystem:k8smsx"
@@ -294,6 +227,11 @@
                             ],
                             "description": "Set the smart code completion for CRDs. This would always prevent/allow the plugin to fetch all custom schemas from all CRDs on cluster, despite of their number."
                         },
+                        "vs-kubernetes.supress-output": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Set to true to disable showing and stealing focus by Helm channel output window"
+                        },
                         "vs-kubernetes.minikube-show-information-expiration": {
                             "type": "string",
                             "default": "Install",
@@ -342,55 +280,55 @@
                     "title": "Minikube path",
                     "description": "File path to a minikube binary. (You can override this on a per-OS basis if required)."
                 },
-                "vscode-kubernetes.kubectl-path.windows": {
+                "vscode-kubernetes.kubectl-path-windows": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Path to kubectl (Windows)",
                     "description": "File path to a kubectl binary."
                 },
-                "vscode-kubernetes.helm-path.windows": {
+                "vscode-kubernetes.helm-path-windows": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Helm path (Windows)",
                     "description": "File path to a helm binary."
                 },
-                "vscode-kubernetes.minikube-path.windows": {
+                "vscode-kubernetes.minikube-path-windows": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Minikube path (Windows)",
                     "description": "File path to a minikube binary."
                 },
-                "vscode-kubernetes.kubectl-path.mac": {
+                "vscode-kubernetes.kubectl-path-mac": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Path to kubectl (Mac)",
                     "description": "File path to a kubectl binary."
                 },
-                "vscode-kubernetes.helm-path.mac": {
+                "vscode-kubernetes.helm-path-mac": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Helm path (Mac)",
                     "description": "File path to a helm binary."
                 },
-                "vscode-kubernetes.minikube-path.mac": {
+                "vscode-kubernetes.minikube-path-mac": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Minikube path (Mac)",
                     "description": "File path to a minikube binary."
                 },
-                "vscode-kubernetes.kubectl-path.linux": {
+                "vscode-kubernetes.kubectl-path-linux": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Path to kubectl (Linux)",
                     "description": "File path to a kubectl binary."
                 },
-                "vscode-kubernetes.helm-path.linux": {
+                "vscode-kubernetes.helm-path-linux": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Helm path (Linux)",
                     "description": "File path to a helm binary."
                 },
-                "vscode-kubernetes.minikube-path.linux": {
+                "vscode-kubernetes.minikube-path-linux": {
                     "type": "string",
                     "scope": "machine",
                     "title": "Minikube path (Linux)",
@@ -497,9 +435,14 @@
                     "group": "2_k8s_3"
                 },
                 {
-                    "when": "",
+                    "when": "resourceLangId == yaml",
                     "command": "extension.helmConvertToTemplate",
                     "group": "2_helm@98"
+                },
+                {
+                    "when": "resourceExtname == .tgz",
+                    "command": "extension.helmInspectChart",
+                    "group": "2_helm@1"
                 }
             ],
             "view/title": [
@@ -819,7 +762,7 @@
                 },
                 {
                     "command": "extension.vsKubernetesUseNamespace",
-                    "when": ""
+                    "when": "true"
                 },
                 {
                     "command": "extension.vsKubernetesCopy",
@@ -843,15 +786,15 @@
                 },
                 {
                     "command": "kubernetes.cloudExplorer.mergeIntoKubeconfig",
-                    "when": ""
+                    "when": "true"
                 },
                 {
                     "command": "kubernetes.cloudExplorer.saveKubeconfig",
-                    "when": ""
+                    "when": "true"
                 },
                 {
                     "command": "kubernetes.portForwarding.showSessions",
-                    "when": ""
+                    "when": "true"
                 }
             ]
         },
@@ -1314,92 +1257,83 @@
         "compile": "npm run compile:ext && npm run compile:view",
         "compile:ext": "webpack --mode none",
         "compile:view": "webpack --mode none --config src/components/logs/webpack.config.js",
-        "watch": "webpack --mode development --watch --info-verbosity verbose",
+        "watch": "webpack --mode development --watch",
         "test-compile": "tsc -p ./",
-        "test": "npm run test-compile && node ./out/test/runTest.js"
+        "test": "npm run test-compile && node ./out/test/runTest.js",
+        "package": "vsce package"
     },
     "extensionDependencies": [
         "redhat.vscode-yaml"
     ],
     "dependencies": {
-        "@kubernetes/client-node": "^0.14.0",
-        "ajv": "^6.9.1",
+        "@azure/arm-containerservice": "^24.1.0",
+        "@kubernetes/client-node": "^1.4.0",
+        "@microsoft/vscode-azext-azureauth": "^5.1.1",
+        "@vscode/test-electron": "^2.5.2",
         "ansi-to-html": "^0.7.2",
-        "await-notify": "^1.0.1",
-        "clipboardy": "^1.2.3",
-        "compare-versions": "^3.1.0",
-        "debug": "^3.1.0",
-        "docker-file-parser": "^1.0.3",
+        "compare-versions": "^6.1.1",
+        "docker-file-parser": "^1.0.7",
         "dockerfile-parse": "^0.2.0",
-        "download": "^7.1.0",
+        "dompurify": "^3.3.1",
         "fuzzysearch": "^1.0.3",
-        "got": "^11.8.2",
-        "graceful-fs": "^4.1.11",
-        "js-yaml": "^3.13.1",
+        "js-yaml": "^4.1.1",
         "lodash": "^4.17.21",
-        "mixin-deep": "^1.3.2",
-        "mkdirp": "^0.5.1",
-        "moment": "^2.29.1",
-        "natives": "^1.1.3",
+        "mkdirp": "^3.0.1",
+        "moment": "^2.30.1",
+        "node-fetch": "^3.3.2",
         "node-yaml-parser": "^0.0.9",
-        "opn": "^5.2.0",
-        "pluralize": "^4.0.0",
-        "portfinder": "^1.0.13",
-        "rxjs": "^6.5.4",
-        "semver": "^5.5.1",
-        "shelljs": "^0.7.7",
-        "spawn-rx": "^3.0.0",
-        "sshpk": "^1.13.2",
-        "tar": "^4.4.1",
-        "tmp": "^0.0.31",
-        "unzipper": "^0.10.5",
-        "url-parse": "^1.5.1",
-        "uuid": "^3.1.0",
-        "vscode-debugadapter": "1.27.0",
-        "vscode-debugprotocol": "1.27.0",
-        "vscode-extension-telemetry": "^0.1.1",
-        "vscode-uri": "^1.0.1",
-        "yaml-ast-parser": "^0.0.40",
+        "opn": "^6.0.0",
+        "pluralize": "^8.0.0",
+        "portfinder": "^1.0.38",
+        "rxjs": "^7.8.2",
+        "semver": "^7.7.3",
+        "shelljs": "^0.10.0",
+        "spawn-rx": "^5.1.2",
+        "tar": "^7.5.2",
+        "tmp": "^0.2.5",
+        "unzipper": "^0.10.14",
+        "@vscode/extension-telemetry": "^1.2.0",
+        "vscode-uri": "^3.1.0",
+        "yaml-ast-parser": "^0.0.43",
         "yamljs": "^0.3.0"
     },
     "devDependencies": {
-        "@bendera/vscode-webview-elements": "^0.2.0",
-        "@types/clipboardy": "^1.1.0",
-        "@types/js-yaml": "^3.12.0",
-        "@types/lodash": "^4.14.113",
-        "@types/mkdirp": "^0.5.2",
-        "@types/mocha": "^8.0.4",
-        "@types/node": "^10.2.0",
-        "@types/opn": "^5.1.0",
-        "@types/pluralize": "^0.0.29",
-        "@types/request": "^2.48.1",
-        "@types/semver": "^5.5.0",
-        "@types/shelljs": "^0.7.8",
-        "@types/sinon": "^7.0.0",
-        "@types/tar": "^4.0.0",
-        "@types/tmp": "^0.0.33",
-        "@types/unzipper": "^0.10.0",
-        "@types/uuid": "^3.4.4",
-        "@types/vscode": "^1.52.0",
-        "@types/websocket": "^0.0.40",
-        "@types/yamljs": "^0.2.30",
-        "@typescript-eslint/eslint-plugin": "^4.28.1",
-        "@typescript-eslint/eslint-plugin-tslint": "4.28.1",
-        "@typescript-eslint/parser": "^4.28.1",
-        "electron": "^13.1.4",
-        "eslint": "^7.29.0",
+        "@bendera/vscode-webview-elements": "^0.17.2",
+        "@types/glob": "^9.0.0",
+        "@types/js-yaml": "^4.0.9",
+        "@types/lodash": "^4.17.21",
+        "@types/mkdirp": "^2.0.0",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^25.0.3",
+        "@types/node-fetch": "^2.6.13",
+        "@types/pluralize": "^0.0.33",
+        "@types/request": "^2.48.13",
+        "@types/semver": "^7.7.1",
+        "@types/shelljs": "^0.10.0",
+        "@types/sinon": "^21.0.0",
+        "@types/tar": "^6.1.13",
+        "@types/tmp": "^0.2.6",
+        "@types/unzipper": "^0.10.9",
+        "@types/vscode": "^1.107.0",
+        "@types/websocket": "^1.0.10",
+        "@types/yamljs": "^0.2.34",
+        "@typescript-eslint/eslint-plugin": "^8.50.1",
+        "@typescript-eslint/parser": "^8.50.1",
+        "@vscode/vsce": "^3.7.1",
+        "eslint": "^9.39.2",
+        "eslint-webpack-plugin": "^5.0.2",
         "file-loader": "^6.2.0",
-        "gulp": "^4.0.2",
-        "gulp-tslint": "^8.1.2",
-        "html-webpack-plugin": "^4.2.0",
-        "mocha": "^8.1.3",
-        "sinon": "^6.3.5",
-        "ts-loader": "^6.0.4",
-        "tslint": "^5.18.0",
-        "typescript": "^3.5.2",
-        "vscode-test": "^1.4.1",
-        "webpack": "^4.35.2",
-        "webpack-cli": "^3.3.5"
+        "glob": "^13.0.0",
+        "gulp": "^5.0.1",
+        "gulp-tslint": "^8.1.4",
+        "html-webpack-plugin": "^5.6.4",
+        "mocha": "^11.7.5",
+        "sinon": "^21.0.1",
+        "ts-loader": "^9.5.4",
+        "tslint": "^6.1.3",
+        "typescript": "^5.9.3",
+        "webpack": "^5.104.1",
+        "webpack-cli": "^6.0.1"
     },
     "repository": {
         "type": "git",

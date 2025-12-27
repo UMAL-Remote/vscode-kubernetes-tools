@@ -1,5 +1,175 @@
 # Change Log
 
+
+## [1.3.28]
+
+* Dependabot PRs
+* Fixing helm install & dry-run for v4 (#1728)
+* Adding progress indicator for helm install & auto-show output (#1729)
+* Fixing Helm: Preview Template for v4 & error output formatting (#1731)
+* UX & feedback improvements for long-running Helm Commands (#1732)
+* Enabling Helm: Inspect Chart on .tgz files (#1736)
+* docs: add missing commands & clarify invocation contexts (#1739)
+
+Contributors: Contributions and Reviews from tejhan, ashu8912. Thank you all!!
+
+## [1.3.27]
+
+* Dependabot PRs
+* Fix Helm v4 version command failing with unknown -c flag (#1718)
+* Making Helm: Lint output channel visible by default (#1717)
+* Adding User Feedback and Quick-Actions for Helm Chart Creation (#1716)
+* Update Vscode engine and package (#1713)
+* Fix js-yaml sec alert. (#1710)
+* Adding helm v4 support for repo chart search (#1712)
+* Explicitly setting font-family for logs webview (#1708)
+* Update VSC package and engine. (#1695)
+* Fix typo in error message for Helm binary check (#1677)
+* Sec fix and VSC Engine update. (#1666)
+* Fix security vulnerability by escaping shell arguments using the standard shell escaping technique. (#1644)
+
+Contributors: Contributions and Reviews to tejhan, squillace, ashu8912 and JohannesKuehnel. Thank you all!!
+
+## [1.3.26]
+
+* Dependabot PRs
+* Fix the package lock with updated version. (#1635)
+* Removing outdated flag in watch command (#1621)
+* Fix VSC Engine update and audit. (#1609)
+* Fix the issue relating missing content in release. (#1597)
+* Adding option to disable automatic helm checks for non-users (#1596)
+* Updating architecture function to detect properly on darwin (#1594)
+* Removing outdated flag in watch command (#1621)
+
+Contributors: Contributions and Reviews to tejhan, squillace. Thank you all!!
+
+
+## [1.3.25]
+
+* Dependabot PRs
+* Use recommended Kubernetes metadata labels in snippets (#1577)
+* Fixing duplicate detection & adding overwrite option (#1564)
+* Adding check & replacement option for invalid active kubeconfig (#1567)
+
+Contributors: Contributions and Reviews to tejhan, bosesuneha, davidgamero, ReinierCC, qpetraroia Thank you all!!
+
+## [1.3.24]
+
+* Dependabot PRs
+* Alignment and visual feedback fixes (#1527)
+* Enabling find widget (#1536)
+* Add check for kconfig file path existence (#1535)
+* Add project CNCF logo for this project. (#1537)
+* Update vscode engine and package. (#1538)
+* Remove invalid badge. (#1550)
+* Removing deprecated download package (#1515)
+* Work to remove deprecated request package. (#1552)
+* fixing gotemplate block comments for toggleability (#1566)
+* Added kebabcase recognition to linter (#1565)
+* updating tar-fs & removing request package (#1575)
+
+Contributors: Contributions and Reviews to tejhan, bosesuneha, davidgamero, ReinierCC, qpetraroia Thank you all!!
+
+## [1.3.23]
+
+* Dependabot PRs
+* Add existing cluster [Fix] (#1510)
+* Fix wrong sub doc. (#1520)
+* Add bot for stale PR closure. (#1517)
+* Updating regex for aks cluster detection (#1519)
+* Fixing kubeconfig bug (#1518)
+* Fix scrolling the bottom of long logs (#1516)
+* Fix some scanning alerts. (#1471)
+* Potential fix for code scanning alert no. 5: Client-side cross-site scripting (#1470)
+* Add bestpractices badge. (#1486)
+
+Contributors: Contributions and Reviews to tejhan, bosesuneha, davidgamero, ReinierCC, qpetraroia Thank you all!!
+
+
+## [1.3.22]
+
+* Dependabot PRs
+* feat: warn about lack of CPU and memory requests (#1493)
+* Fix: broken telemetry due to old logic in place. #1500
+
+Contributors: Contributions and Reviews to davidxia, tejhan, bosesuneha, davidgamero, ReinierCC, qpetraroia Thank you all!!
+
+## [1.3.21]
+
+* Dependabot PRs
+* Create aks cluster (#1455)
+* GH Workflow: Add code ql for the repo. (#1468)
+* Fix the type/nodes update. (#1463)
+* Remove acs and its options (#1448)
+* Build fix dynamic import
+* Fix eslint upgrade. (#1484)
+* Owner Update.
+
+Contributors: Reviews et al. tejhan, ReinierCC, hsubramanianaks, qpetraroia Thank you all!!
+
+## [1.3.20]
+
+* Dependabot PRs
+* Add the AKS logo to any AKS cluster. (#1440)
+
+Contributors: Reviews et al. tejhan, ReinierCC, hsubramanianaks, qpetraroia Thank you all!!
+## [1.3.19]
+
+* Simple clipboard implementation. (#1361)
+* Dependabot PR's
+* Fix update with engine udpate. (#1369)
+* Fix the vscode update. (#1384)
+* Changes in correlation with new GH Action Permission Changes. (#1247)
+* Fix the client-node update. (#1390)
+* Fix:Init container logs not working (#1391)
+* Fix build break. (#1419)
+* Update owner.md for Current Active Users and Project Collaboration (#1431)
+
+Contributors: bcmyguest, tejhan, ReinierCC, hsubramanianaks, qpetraroia Thank you all!!
+
+
+## [1.3.18]
+
+* Fix clipboardy/webpack issue - breaking release 1.3.17 (#1355)
+
+Contributors: hsubramanianaks, anime-shed , kejatura-dev, ReinierCC, Also, an FYI, so suppress work will stay as it is.: qpetraroia, corneliusroemer, okgolove, tejhan, gambtho, squillace, metaphy6 , verhelstq  Thank you all!!
+
+## [1.3.17]
+
+* feat: add an option to disable Helm channel output (#1208)
+* dependabot PR's
+* Remove old site scaffolding project and Update/package dependencies (#1277)
+* Added snippet for ReplicaSet (#1268)
+* Prune and upgrade npm package dependencies (#1265)
+* Use vscode-single-select instead of vscode-select (#1294)
+* Fix the ubuntu failure. (#1279)
+
+Contributors: dbreyfogle, okgolove, peterbom, mikeseese, Thank you all!!
+
+## [1.3.16]
+
+* Hide convert context menu (#1244)
+* Test fixes. (#1242)
+
+Contributors: timheuer, Thank you all!!
+
+## [1.3.15]
+
+* Revert killTree changes. Detail discussion here https://github.com/vscode-kubernetes-tools/vscode-kubernetes-tools/issues/1216
+
+Contributors: mikeseese, peterbom, michaellzc, mfilipe-te Thank you all!!
+
+## [1.3.14]
+
+* Fix tool path configuration handling. (#1192)
+* No more kubectl logs (#1195)
+* Added snippet for CronJob (#1201)
+* Include missing bracket pairs to helm language configuration (#1198)
+* Kill the entire process tree instead of just the process (#1204)
+* Create a more responsive/adaptive layout for the log view (#1205)
+
+Contributors: lstocchi, mikeseese, sergiogarciadev, aceat64, juozasg, a544jh, Thank you all!!
+
 ## [1.3.13]
 
 * Trim container name and filter empty ones.

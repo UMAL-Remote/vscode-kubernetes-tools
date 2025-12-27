@@ -1,5 +1,10 @@
 # Visual Studio Code Kubernetes Tools
-[![Build Status](https://travis-ci.org/Azure/vscode-kubernetes-tools.svg?branch=master)](https://travis-ci.org/Azure/vscode-kubernetes-tools)
+
+![Kubernetes Extension for Visual Studio Code logo](images/k8s-ext-logo/kefvsc-horizontal-colour.png)
+
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10056/badge)](https://www.bestpractices.dev/projects/10056)
+[![CodeQL Advanced](https://github.com/vscode-kubernetes-tools/vscode-kubernetes-tools/actions/workflows/codeql.yml/badge.svg)](https://github.com/vscode-kubernetes-tools/vscode-kubernetes-tools/actions/workflows/codeql.yml)
+[![Development build](https://github.com/vscode-kubernetes-tools/vscode-kubernetes-tools/actions/workflows/build-dev.yml/badge.svg)](https://github.com/vscode-kubernetes-tools/vscode-kubernetes-tools/actions/workflows/build-dev.yml)
 
 The extension for developers building applications to run in Kubernetes clusters
 and for DevOps staff troubleshooting Kubernetes applications.
@@ -100,19 +105,25 @@ If you want to skip TLS verification for a particular cluster, you can edit your
    * `Kubernetes: Load` - Load a resource from the Kubernetes API and create a new editor window.
    * `Kubernetes: Get` - Get the status for a specific resource.
    * `Kubernetes: Logs` - Open a view with a set of options to display/follow logs.
+   * `Kubernetes: Describe` - Describe the object in a terminal window.
+   * `Kubernetes: Delete` - Delete a Kubernetes resource.
+   * `Kubernetes: Delete Now` - Force delete a pod immediately without waiting for graceful termination.
    * `Kubernetes: Follow Events` - Follow events on a selected namespace.
    * `Kubernetes: Show Events` - Show events on a selected namespace.
-   * `Kubernetes: Watch` - Watch a specific resource or all resources of that object type, and update the cluster explorer as they change
-   * `Kubernetes: Stop Watching` - Stop watching the specific resource
+
+   These commands are designed for use from the cluster explorer tree view:
+
+   * `Kubernetes: Watch` - Watch a specific resource and update the cluster explorer as it changes.
+   * `Kubernetes: Stop Watching` - Stop watching the specific resource.
+   * `Kubernetes: Copy Name` - Copy the name of a resource to the clipboard.
+   * `Kubernetes: Run CronJob Now` - Manually trigger a CronJob to run immediately.
 
 #### Commands while viewing a Kubernetes manifest file
 
    * `Kubernetes: Explain` - Use the `kubectl explain ...` tool to annotate Kubernetes API objects
    * `Kubernetes: Create` - Create an object using the current document
-   * `Kubernetes: Delete` - Delete an object contained in the current document.
    * `Kubernetes: Apply` - Apply changes to an object contained in the current document.
    * `Kubernetes: Expose` - Expose the object in the current document as a service.
-   * `Kubernetes: Describe` - Describe the object in a terminal window.
    * `Kubernetes: Diff` - Show the difference between a local copy of the object, and that which is deployed to the cluster.
 
 #### Commands for application directories
@@ -176,6 +187,9 @@ Minikube tools to be installed and available on your PATH.
      * `Helm: Insert Dependency` - Insert a dependency YAML fragment
      * `Helm: Dependency Update` - Update a chart's dependencies
      * `Helm: Package` - Package a chart directory into a chart archive
+     * `Helm: Fetch` - Download a chart from a repository (can be run via the palette or by right-clicking a Helm repo)
+     * `Helm: Install` - Install a chart to the cluster
+     * `Helm: Show Dependencies` - Show the dependencies for a chart
      * `Helm: Convert to Template` - Create a template based on an existing resource or manifest
      * `Helm: Convert to Template Parameter` - Convert a fixed value in a template to a parameter in the `values.yaml` file
    * Code lenses for:
@@ -203,8 +217,10 @@ Minikube tools to be installed and available on your PATH.
        * `vs-kubernetes.suppress-kubectl-not-found-alerts` - Turns off the warning (and installation prompt) if `kubectl` was not found. You should not normally set this, as most of the extension depends on `kubectl`, but it can be useful if working primarily with Helm.
        * `vs-kubernetes.suppress-helm-not-found-alerts` - Turns off the warning (and installation prompt) if `helm` was not found.
        * `vs-kubernetes.ignore-recommendations` - Set to true to silence Kubernetes extension recommendation notifications.
+       * `vs-kubernetes.crd-code-completion` - Set to "enabled" or "disabled" to control smart code completion for CRDs.
        * `vs-kubernetes.minikube-show-information-expiration` - Set to valid expiration date for minikube install to show information dialog box to display.
        * `vs-kubernetes.enable-minimal-workflow` - Enables the minimal workflow for several actions (Get, Describe, Scale, Expose, Switch). By executing one of those commands the queries to the cluster are reduced at minimum and users are able to freely type the resource name to use.
+       * `resource-commands-on-files` - If true, show Kubernetes resource commands (Create, Apply, Delete) on file context menu for all YAML files.
    * `vsdocker.imageUser` - Image prefix for the container images e.g. 'docker.io/brendanburns'
    * `checkForMinikubeUpgrade` - On extension startup, notify if a minikube upgrade is available. Defaults to true.
    * `disable-lint` - Disable all linting of Kubernetes files
@@ -222,7 +238,7 @@ Minikube tools to be installed and available on your PATH.
 
 ## Custom tool locations
 
-For `kubectl` and `helm`, the binaries do not need to be on the system PATH. You can configure the extension by specifying the locations using the appropriate `vs-kubernetes -> vs-kubernetes.${tool}-path` configuration setting.  See [Extension Settings](#extension-settings) below.
+For `kubectl` and `helm`, the binaries do not need to be on the system PATH. You can configure the extension by specifying the locations using the appropriate `vscode-kubernetes.${tool}-path` configuration setting.  See [Extension Settings](#extension-settings) below.
 
 The extension can install `kubectl` and `helm` for you if they are missing - choose **Install dependencies** when you see an error notification for the missing tool.  This will set `kubectl-path` and `helm-path` entries in your configuration for the current OS (see "Portable extension configuration" below) - the programs will *not* be installed on the system PATH, but this will be sufficient for them to work with the extension.
 
@@ -232,18 +248,16 @@ If you are working with Azure Container Services or Azure Kubernetes Services, t
 
 If you move your configuration file between machines with different OSes (and therefore different paths to binaries) you can override the following settings on a per-OS basis by appending `.windows`, `.mac` or `.linux` to the setting name:
 
-  * `vs-kubernetes.kubectl-path`
-  * `vs-kubernetes.helm-path`
-  * `vs-kubernetes.minikube-path`
+  * `vscode-kubernetes.kubectl-path`
+  * `vscode-kubernetes.helm-path`
+  * `vscode-kubernetes.minikube-path`
 
 For example, consider the following settings file:
 
 ```json
 {
-  "vs-kubernetes": {
-    "vs-kubernetes.kubectl-path": "/home/foo/kubernetes/bin/kubectl",
-    "vs-kubernetes.kubectl-path.windows": "c:\\Users\\foo\\kubernetes\\bin\\kubectl.exe"
-  }
+  "vscode-kubernetes.kubectl-path": "/home/foo/kubernetes/bin/kubectl",
+  "vscode-kubernetes.kubectl-path-windows": "c:\\Users\\foo\\kubernetes\\bin\\kubectl.exe"
 }
 ```
 

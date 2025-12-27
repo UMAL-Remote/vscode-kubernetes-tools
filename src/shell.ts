@@ -8,6 +8,7 @@ import { host } from './host';
 import { ChildProcess } from 'child_process';
 import { getKubeconfigPath } from './components/kubectl/kubeconfig';
 import { ExecResult } from './binutilplusplus';
+import { escapeShellArg } from './utils/shell-escape';
 
 export enum Platform {
     Windows,
@@ -160,9 +161,10 @@ function execCore(cmd: string, opts: any, callback?: ((proc: ChildProcess) => vo
         if (getUseWsl()) {
             cmd = 'wsl ' + cmd;
         }
+        opts['silent'] = true;
         const proc = shelljs.exec(cmd, opts, (code, stdout, stderr) => resolve({code : code, stdout : stdout, stderr : stderr}));
         if (stdin) {
-            proc.stdin.end(stdin);
+            proc.stdin?.end(stdin);
         }
         if (callback) {
             callback(proc);
@@ -211,7 +213,7 @@ function pathEntrySeparator() {
 
 function which(bin: string): string | null {
     if (getUseWsl()) {
-        const result = shelljs.exec(`wsl.exe which ${bin}`);
+        const result = shelljs.exec(`wsl.exe which ${escapeShellArg(bin)}`);
         if (result.code !== 0) {
             throw new Error(result.stderr);
         }
@@ -223,7 +225,7 @@ function which(bin: string): string | null {
 function cat(path: string): string {
     if (getUseWsl()) {
         const filePath = path.replace(/\\/g, '/');
-        const result = shelljs.exec(`wsl.exe cat ${filePath}`);
+        const result = shelljs.exec(`wsl.exe cat ${escapeShellArg(filePath)}`);
         if (result.code !== 0) {
             throw new Error(result.stderr);
         }
@@ -235,7 +237,7 @@ function cat(path: string): string {
 function ls(path: string): string[] {
     if (getUseWsl()) {
         const filePath = path.replace(/\\/g, '/');
-        const result = shelljs.exec(`wsl.exe ls ${filePath}`);
+        const result = shelljs.exec(`wsl.exe ls ${escapeShellArg(filePath)}`);
         if (result.code !== 0) {
             throw new Error(result.stderr);
         }

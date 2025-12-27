@@ -111,6 +111,7 @@ export class FuncMap {
             // 2.12.0
             this.f("snakecase", "snakecase $str", "Convert $str to snake_case"),
             this.f("camelcase", "camelcase $str", "convert string to camelCase"),
+            this.f("kebabcase", "kebabcase $str", "convert string to kebab-case"),
             this.f("shuffle", "shuffle $str", "randomize a string"),
             this.f("fail", `fail $msg`, "cause the template render to fail with a message $msg."),
 
@@ -155,7 +156,7 @@ export class FuncMap {
             // Math
             this.f("add", "add $a $b $c", "add two or more numbers"),
             this.f("add1", "add1 $a", "increment $a by 1"),
-            this.f("sub", "sub $a $b", "subtract $a from $b"),
+            this.f("sub", "sub $a $b", "subtract $b from $a"),
             this.f("div", "div $a $b", "divide $b by $a"),
             this.f("mod", "mod $a $b", "modulo $b by $a"),
             this.f("mul", "mult $a $b", "multiply $b by $a"),

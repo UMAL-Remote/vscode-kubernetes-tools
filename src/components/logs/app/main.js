@@ -1,4 +1,5 @@
 const vscode = acquireVsCodeApi();
+const DOMPurify = require('dompurify');
 const Convert = require('ansi-to-html');
 const convert = new Convert();
 
@@ -34,21 +35,18 @@ window.addEventListener('message', (event) => {
             containersPanel.classList.remove('display-none');
             containersPanel.classList.add('display-inline-block');
 
-            const select = createElement('vscode-select');
+            const select = createElement('vscode-single-select');
             select.setAttribute('id', 'containers-select');
             // eslint-disable-next-line @typescript-eslint/prefer-for-of
             for (let i = 0; i < containers.length; i += 1) {
                 const option = createElement('vscode-option', containers[i].name,
                     (containers[i].initContainer ? containers[i].name + ' (init)' : containers[i].name));
-                if (i === 0) {
-                    option.setAttribute('selected', '');
-                }
                 select.appendChild(option);
             }
             containersPanel.appendChild(select);
         }
         case 'content': {
-            const text = message.text.replace(/\n$/, '');
+            const text = message.text?.replace(/\n$/, '');
             if (!text) {
                 return;
             }
@@ -88,16 +86,16 @@ function setSettings(settings) {
 
     if (since !== undefined) {
         const split = splitSinceDuration(since);
-        document.getElementById('since-input').value = split.number;
-        document.getElementById('since-select').value = split.unit;
+        document.getElementById('since-input').setAttribute('value', split.number);
+        document.getElementById('since-select').setAttribute('value', split.unit);
     }
 
     if (tail !== undefined) {
-        document.getElementById('tail-input').value = tail;
+        document.getElementById('tail-input').setAttribute('value', tail);
     }
 
     if (destination !== undefined) {
-        document.getElementById('destination-select').value = destination;
+        document.getElementById('destination-select').setAttribute('value', destination);
     }
 
     if (wrap !== undefined) {
@@ -126,8 +124,9 @@ function debounce(func, wait, immediate) {
 
 function createElement(type, value, content) {
     const element = document.createElement(type);
-    if (value) { element.value = value; }
+    if (value) { element.setAttribute('value', value); }
     if (content) { element.textContent = content; }
+
     return element;
 }
 
@@ -242,6 +241,17 @@ function runFilter() {
     renderByPagination();
 }
 
+function setHeightContentPanel(remove = false) {
+    const panel = document.getElementById('innerLogPanel');
+    if (remove) {
+      panel.style.removeProperty('height');
+    } else {
+      const rows = Object.keys(isFiltering() ? filteredContent : fullPageContent).length;
+      const lineHeight = getDefaultDivHeightValue();
+      panel.style.height = `${rows * lineHeight}px`;
+    }
+  }
+
 function changeVisibilityAfterRun() {
     if (getDestinationValue() === 'Terminal') {
         return;
@@ -345,17 +355,6 @@ function updateContent(newContent) {
     setHeightContentPanel();
     renderByPagination(content);
     switchClass('clearBtn', 'display-none', 'display-inline-block');
-}
-
-function setHeightContentPanel(removeStyle) {
-    if (removeStyle) {
-        document.getElementById('innerLogPanel').style.removeProperty('height');
-    } else {
-        const content = isFiltering() ? filteredContent : fullPageContent;
-        const rows = Object.keys(content).length;
-        const heightDiv = getDefaultDivHeightValue();
-        document.getElementById('innerLogPanel').style.height = `${heightDiv * rows}px`;
-    }
 }
 
 function saveFilteredContent(content) {
@@ -615,7 +614,7 @@ function render(content, from, prepend) {
         const fragment = document.createRange().createContextualFragment('No logs ...');
         contentElement.appendChild(fragment);
     } else {
-        const contentToDisplay = concatenateObjectValuesAsString(content, from);
+        const contentToDisplay = DOMPurify.sanitize(concatenateObjectValuesAsString(content, from));
         const fragment = document.createRange().createContextualFragment(contentToDisplay);
         if (prepend) {
             contentElement.prepend(fragment);
